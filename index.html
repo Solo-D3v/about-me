@@ -138,7 +138,7 @@
       position: relative;
       width: 74px;
       height: 74px;
-      border-radius: ;
+      border-radius: 999px;
       padding: 2px;
       background: conic-gradient(from 180deg, #7f5af0, #2cb67d, #ff6b6b, #7f5af0);
       animation: rotateBorder 7s linear infinite;
@@ -367,7 +367,7 @@
       opacity: 1;
     }
 
-    /* MÜZİK PLAYER */
+    /* MÜZİK PLAYER (YouTube) */
     .player {
       margin-bottom: 16px;
       padding: 11px 12px;
@@ -377,6 +377,8 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      position: relative;
+      overflow: hidden;
     }
 
     .player-cover {
@@ -476,6 +478,16 @@
       color: var(--danger);
     }
 
+    /* GİZLİ YOUTUBE IFRAME'İ */
+    #yt-player-wrapper {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+    }
+
     /* MOBİL */
     @media (max-width: 480px) {
       .card {
@@ -519,7 +531,6 @@
       <div class="avatar-wrapper">
         <div class="avatar-inner">
           <img src="https://cdn.discordapp.com/attachments/1101236284992786513/1438988784170569859/image.png?ex=6918e23d&is=691790bd&hm=04f6591fbe8299310120b04d9df8173e7c3094d18a2eb0b0eab0405c16977097&" alt="Avatar" />
-          <span style="font-size: 28px;">♟️</span>
           <span class="online-dot"></span>
         </div>
       </div>
@@ -552,12 +563,12 @@
       </div>
     </section>
 
-    <!-- MÜZİK PLAYER -->
+    <!-- MÜZİK PLAYER (YouTube) -->
     <section class="player">
       <div class="player-cover">♪</div>
       <div class="player-info">
         <div class="player-title">Rock Bottom</div>
-        <div class="player-artist">by Eminem</div>
+        <div class="player-artist">by Eminem (YouTube)</div>
       </div>
       <div class="player-controls">
         <button class="play-btn" id="playButton" aria-label="Play / Pause">
@@ -565,9 +576,11 @@
         </button>
         <span class="player-status" id="playerStatus">Ready</span>
       </div>
-      <audio id="bgMusic" loop>
-        <source src="14_Eminem_-_Rock_Bottom_(mp3.pm).mp3" type="audio/mpeg">
-      </audio>
+
+      <!-- GÖRÜNMEYEN YOUTUBE PLAYER -->
+      <div id="yt-player-wrapper">
+        <div id="yt-player"></div>
+      </div>
     </section>
 
     <!-- LİNKLER -->
@@ -627,37 +640,63 @@
     </footer>
   </main>
 
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
-    // MÜZİK PLAYER KONTROLÜ
-    const audio = document.getElementById("bgMusic");
+    let player;
+    let isPlaying = false;
+
     const playButton = document.getElementById("playButton");
     const statusText = document.getElementById("playerStatus");
 
-    let isPlaying = false;
+    // Buraya kullanmak istediğin YouTube video ID'sini yaz.
+    // Örn: https://www.youtube.com/watch?v=VIDEO_ID
+    const YOUTUBE_VIDEO_ID = "VIDEO_ID_BURAYA"; 
 
+    // YouTube IFrame API hazır olduğunda çağrılır
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player("yt-player", {
+        height: "0",
+        width: "0",
+        videoId: YOUTUBE_VIDEO_ID,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          rel: 0,
+          showinfo: 0,
+          modestbranding: 1
+        },
+        events: {
+          onStateChange: onPlayerStateChange
+        }
+      });
+    }
+
+    // Player durumu değiştiğinde
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        isPlaying = true;
+        playButton.textContent = "⏸";
+        statusText.textContent = "Playing";
+      } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+        isPlaying = false;
+        playButton.textContent = "▶";
+        statusText.textContent = event.data === YT.PlayerState.ENDED ? "Ended" : "Paused";
+      }
+    }
+
+    // Play/Pause butonu
     playButton.addEventListener("click", function () {
-      if (!audio.src) {
-        statusText.textContent = "No track";
+      if (!player || typeof player.getPlayerState !== "function") {
+        statusText.textContent = "Loading...";
         return;
       }
 
-      if (isPlaying) {
-        audio.pause();
-        isPlaying = false;
-        playButton.textContent = "▶";
-        statusText.textContent = "Paused";
+      const state = player.getPlayerState();
+      if (state === YT.PlayerState.PLAYING) {
+        player.pauseVideo();
       } else {
-        audio
-          .play()
-          .then(() => {
-            isPlaying = true;
-            playButton.textContent = "⏸";
-            statusText.textContent = "Playing";
-          })
-          .catch((err) => {
-            console.error(err);
-            statusText.textContent = "Autoplay blocked";
-          });
+        player.playVideo();
       }
     });
 
