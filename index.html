@@ -474,10 +474,6 @@
       letter-spacing: 0.12em;
     }
 
-    .heart {
-      color: var(--danger);
-    }
-
     /* GİZLİ YOUTUBE IFRAME'İ */
     #yt-player-wrapper {
       position: absolute;
@@ -649,39 +645,53 @@
     const playButton = document.getElementById("playButton");
     const statusText = document.getElementById("playerStatus");
 
-    // Buraya kullanmak istediğin YouTube video ID'sini yaz.
-    // Örn: https://www.youtube.com/watch?v=VIDEO_ID
-    const YOUTUBE_VIDEO_ID = "lcmDvh-bt2c"; 
+    // Senin verdiğin video ID
+    const YOUTUBE_VIDEO_ID = "lcmDvh-bt2c";
 
-    // YouTube IFrame API hazır olduğunda çağrılır
+    // IFrame API hazır olduğunda
     function onYouTubeIframeAPIReady() {
       player = new YT.Player("yt-player", {
         height: "0",
         width: "0",
         videoId: YOUTUBE_VIDEO_ID,
         playerVars: {
-          autoplay: 0,
+          autoplay: 1,     // Sayfa açılınca çalmayı dene
           controls: 0,
           rel: 0,
           showinfo: 0,
           modestbranding: 1
         },
         events: {
+          onReady: onPlayerReady,
           onStateChange: onPlayerStateChange
         }
       });
     }
 
-    // Player durumu değiştiğinde
+    // Player hazır olunca autoplay denemesi
+    function onPlayerReady(event) {
+      statusText.textContent = "Loading...";
+      try {
+        event.target.playVideo();
+      } catch (e) {
+        statusText.textContent = "Autoplay blocked";
+      }
+    }
+
+    // Player durumu değişince UI güncelle
     function onPlayerStateChange(event) {
       if (event.data === YT.PlayerState.PLAYING) {
         isPlaying = true;
         playButton.textContent = "⏸";
         statusText.textContent = "Playing";
-      } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+      } else if (event.data === YT.PlayerState.PAUSED) {
         isPlaying = false;
         playButton.textContent = "▶";
-        statusText.textContent = event.data === YT.PlayerState.ENDED ? "Ended" : "Paused";
+        statusText.textContent = "Paused";
+      } else if (event.data === YT.PlayerState.ENDED) {
+        isPlaying = false;
+        playButton.textContent = "▶";
+        statusText.textContent = "Ended";
       }
     }
 
@@ -700,7 +710,7 @@
       }
     });
 
-    // LINK BUTONLARINDA HOVER GLOW EFEKTİ
+    // Link butonlarında hover glow efekti
     document.querySelectorAll(".link-btn").forEach((btn) => {
       const glow = btn.querySelector(".link-glow");
       btn.addEventListener("mousemove", (e) => {
