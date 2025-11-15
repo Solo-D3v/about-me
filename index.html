@@ -731,15 +731,15 @@
     function onPlayerStateChange(event) {
       if (event.data === YT.PlayerState.PLAYING) {
         isPlaying = true;
-        playButton.textContent = "⏯";
+        playButton.textContent = "▶";
         statusText.textContent = "Playing";
       } else if (event.data === YT.PlayerState.PAUSED) {
         isPlaying = false;
-        playButton.textContent = "▶";
+        playButton.textContent = "⏯";
         statusText.textContent = "Paused";
       } else if (event.data === YT.PlayerState.ENDED) {
         isPlaying = false;
-        playButton.textContent = "▶";
+        playButton.textContent = "⏯";
         statusText.textContent = "Ended";
       }
     }
